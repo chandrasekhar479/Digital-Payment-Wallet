@@ -1,0 +1,25 @@
+// seed.js
+const connectDB = require('./db');
+const User = require('./models/User');
+const Wallet = require('./models/Wallet');
+
+const seedData = async () => {
+    await connectDB();
+
+    const user = await User.create({
+        name: 'John Doe',
+        email: 'john@example.com',
+        password: 'hashed_password', // Store hashed passwords in real apps
+        phone: '1234567890',
+    });
+
+    await Wallet.create({
+        userId: user._id,
+        balance: 1000,
+    });
+
+    console.log('Data Seeded Successfully');
+    process.exit();
+};
+
+seedData();
