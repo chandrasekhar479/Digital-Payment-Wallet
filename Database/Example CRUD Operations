@@ -1,0 +1,61 @@
+// routes/wallet.js
+const express = require('express');
+const Wallet = require('../models/Wallet');
+const Transaction = require('../models/Transaction');
+
+const router = express.Router();
+
+// Fetch Wallet Balance
+router.get('/:userId', async (req, res) => {
+    const { userId } = req.params;
+    const wallet = await Wallet.findOne({ userId });
+    if (!wallet) return res.status(404).json({ error: 'Wallet not found' });
+
+    res.json(wallet);
+});
+
+// Add Money to Wallet
+router.post('/add-money', async (req, res) => {
+    const { userId, amount } = req.body;
+
+    const wallet = await Wallet.findOne({ userId });
+    if (!wallet) return res.status(404).json({ error: 'Wallet not found' });
+
+    wallet.balance += amount;
+    await wallet.save();
+
+    await Transaction.create({
+        userId,
+        type: 'credit',
+        amount,
+        description: 'Added money to wallet',
+    });
+
+    res.json(wallet);
+});
+
+// Deduct Money from Wallet
+router.post('/deduct-money', async (req, res) => {
+    const { userId, amount } = req.body;
+
+    const wallet = await Wallet.findOne({ userId });
+    if (!wallet) return res.status(404).json({ error: 'Wallet not found' });
+
+    if (wallet.balance < amount) {
+        return res.status(400).json({ error: 'Insufficient balance' });
+    }
+
+    wallet.balance -= amount;
+    await wallet.save();
+
+    await Transaction.create({
+        userId,
+        type: 'debit',
+        amount,
+        description: 'Deducted money from wallet',
+    });
+
+    res.json(wallet);
+});
+
+module.exports = router;
